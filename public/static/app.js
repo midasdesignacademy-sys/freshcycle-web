@@ -1,212 +1,209 @@
 /* ============================================
-   THE FRESH CYCLE — Main JavaScript
+   THE FRESH CYCLE — Premium JavaScript
    ============================================ */
 
 document.addEventListener('DOMContentLoaded', () => {
 
-  // ---- Navbar scroll effect ----
+  // ─── Navbar ───
   const navbar = document.getElementById('navbar');
+  let lastScroll = 0;
+
   const handleScroll = () => {
-    if (window.scrollY > 60) {
+    const curr = window.scrollY;
+    if (curr > 60) {
       navbar.classList.add('scrolled');
     } else {
       navbar.classList.remove('scrolled');
     }
+    lastScroll = curr;
   };
   window.addEventListener('scroll', handleScroll, { passive: true });
   handleScroll();
 
-  // ---- Mobile nav toggle ----
+  // ─── Mobile nav ───
   const navToggle = document.getElementById('navToggle');
   const navLinks  = document.getElementById('navLinks');
+
   navToggle?.addEventListener('click', () => {
-    navLinks.classList.toggle('open');
-    const isOpen = navLinks.classList.contains('open');
-    navToggle.setAttribute('aria-expanded', isOpen);
-    // Animate hamburger to X
-    const spans = navToggle.querySelectorAll('span');
+    const isOpen = navLinks.classList.toggle('open');
+    const spans  = navToggle.querySelectorAll('span');
     if (isOpen) {
       spans[0].style.transform = 'rotate(45deg) translate(5px, 5px)';
-      spans[1].style.opacity = '0';
+      spans[1].style.opacity   = '0';
       spans[2].style.transform = 'rotate(-45deg) translate(5px, -5px)';
     } else {
-      spans[0].style.transform = '';
-      spans[1].style.opacity = '';
-      spans[2].style.transform = '';
+      spans.forEach(s => { s.style.transform = ''; s.style.opacity = ''; });
     }
   });
 
-  // Close nav on link click (mobile)
   navLinks?.querySelectorAll('a').forEach(link => {
     link.addEventListener('click', () => {
       navLinks.classList.remove('open');
       const spans = navToggle.querySelectorAll('span');
-      spans[0].style.transform = '';
-      spans[1].style.opacity = '';
-      spans[2].style.transform = '';
+      spans.forEach(s => { s.style.transform = ''; s.style.opacity = ''; });
     });
   });
 
-  // ---- Counter animation (hero stats) ----
+  // ─── Counter animation ───
   const counters = document.querySelectorAll('.stat-number[data-target]');
   let countersStarted = false;
 
-  const animateCounters = () => {
-    counters.forEach(counter => {
-      const target = parseInt(counter.dataset.target);
-      const duration = 1800;
-      const step = target / (duration / 16);
-      let current = 0;
-      const update = () => {
-        current = Math.min(current + step, target);
-        counter.textContent = Math.floor(current);
-        if (current < target) requestAnimationFrame(update);
-        else counter.textContent = target;
-      };
-      requestAnimationFrame(update);
-    });
+  const easeOutQuart = t => 1 - Math.pow(1 - t, 4);
+
+  const animateCounter = (el) => {
+    const target   = parseInt(el.dataset.target);
+    const duration = 2000;
+    const start    = performance.now();
+
+    const tick = (now) => {
+      const elapsed  = now - start;
+      const progress = Math.min(elapsed / duration, 1);
+      el.textContent = Math.floor(easeOutQuart(progress) * target);
+      if (progress < 1) requestAnimationFrame(tick);
+      else el.textContent = target;
+    };
+    requestAnimationFrame(tick);
   };
 
-  // Trigger when hero is visible
-  const heroSection = document.querySelector('.hero');
-  if (heroSection) {
-    const heroObserver = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting && !countersStarted) {
-        countersStarted = true;
-        setTimeout(animateCounters, 800);
-      }
-    }, { threshold: 0.3 });
-    heroObserver.observe(heroSection);
-  }
+  const heroObserver = new IntersectionObserver((entries) => {
+    if (entries[0].isIntersecting && !countersStarted) {
+      countersStarted = true;
+      setTimeout(() => counters.forEach(animateCounter), 1000);
+    }
+  }, { threshold: 0.4 });
+  const hero = document.querySelector('.hero');
+  if (hero) heroObserver.observe(hero);
 
-  // ---- Scroll reveal ----
-  const revealElements = document.querySelectorAll('.service-card, .portfolio-item, .testimonial-card, .pricing-card, .process-step, .value-item, .about-metric');
-  
-  revealElements.forEach(el => el.classList.add('reveal'));
+  // ─── Scroll reveal ───
+  const revealTargets = document.querySelectorAll(
+    '.service-card, .portfolio-item, .testimonial-card, .pricing-card, .process-step, .value-item, .about-metric, .contact-item, .trust-item'
+  );
+  revealTargets.forEach(el => el.classList.add('reveal'));
 
-  const revealObserver = new IntersectionObserver((entries) => {
-    entries.forEach((entry, i) => {
-      if (entry.isIntersecting) {
-        // Stagger animation for grid items
-        const siblings = [...entry.target.parentElement.children];
-        const index = siblings.indexOf(entry.target);
-        setTimeout(() => {
-          entry.target.classList.add('visible');
-        }, index * 80);
-        revealObserver.unobserve(entry.target);
-      }
+  const revealObs = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      const siblings = [...(entry.target.parentElement?.children || [])];
+      const idx = siblings.indexOf(entry.target);
+      setTimeout(() => entry.target.classList.add('visible'), idx * 70);
+      revealObs.unobserve(entry.target);
     });
   }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+  revealTargets.forEach(el => revealObs.observe(el));
 
-  revealElements.forEach(el => revealObserver.observe(el));
-
-  // ---- Portfolio Filter ----
-  const filterBtns = document.querySelectorAll('.filter-btn');
+  // ─── Portfolio filter ───
+  const filterBtns     = document.querySelectorAll('.filter-btn');
   const portfolioItems = document.querySelectorAll('.portfolio-item');
 
   filterBtns.forEach(btn => {
     btn.addEventListener('click', () => {
-      // Update active button
       filterBtns.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-
       const filter = btn.dataset.filter;
 
       portfolioItems.forEach((item, i) => {
         const match = filter === 'all' || item.dataset.category === filter;
         if (match) {
           item.classList.remove('hidden');
-          item.style.animation = `fadeIn 0.4s ease ${i * 0.05}s forwards`;
+          item.style.opacity = '0';
+          item.style.transform = 'translateY(20px)';
+          requestAnimationFrame(() => {
+            setTimeout(() => {
+              item.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+              item.style.opacity = '1';
+              item.style.transform = 'translateY(0)';
+            }, i * 40);
+          });
         } else {
           item.classList.add('hidden');
+          item.style.transition = '';
+          item.style.opacity = '';
+          item.style.transform = '';
         }
       });
     });
   });
 
-  // ---- Active nav link on scroll ----
+  // ─── Active nav link ───
   const sections = document.querySelectorAll('section[id]');
   const navItems = document.querySelectorAll('.nav-links a');
 
-  const activateNavLink = () => {
+  const updateActiveNav = () => {
     let current = '';
-    sections.forEach(section => {
-      const sectionTop = section.offsetTop - 100;
-      if (window.scrollY >= sectionTop) {
-        current = section.getAttribute('id');
-      }
+    sections.forEach(s => {
+      if (window.scrollY >= s.offsetTop - 120) current = s.id;
     });
-    navItems.forEach(link => {
-      link.classList.remove('active');
-      if (link.getAttribute('href') === `#${current}`) {
-        link.classList.add('active');
-      }
+    navItems.forEach(a => {
+      a.classList.toggle('active-nav', a.getAttribute('href') === `#${current}`);
     });
   };
-  window.addEventListener('scroll', activateNavLink, { passive: true });
+  window.addEventListener('scroll', updateActiveNav, { passive: true });
 
-  // ---- Contact Form ----
-  const contactForm = document.getElementById('contactForm');
-  contactForm?.addEventListener('submit', (e) => {
+  // ─── Contact form → WhatsApp ───
+  const form = document.getElementById('contactForm');
+  form?.addEventListener('submit', e => {
     e.preventDefault();
-    const btn = contactForm.querySelector('button[type="submit"]');
-    const originalText = btn.innerHTML;
+    const btn   = form.querySelector('button[type="submit"]');
+    const orig  = btn.innerHTML;
 
-    // Get form data
-    const name = contactForm.querySelector('input[type="text"]').value;
-    const phone = contactForm.querySelector('input[type="tel"]').value;
-    const service = contactForm.querySelector('select').value;
-    const message = contactForm.querySelector('textarea').value;
+    const name    = form.querySelector('input[type="text"]')?.value || '';
+    const phone   = form.querySelector('input[type="tel"]')?.value  || '';
+    const service = form.querySelector('select')?.value             || '';
+    const msg     = form.querySelector('textarea')?.value           || '';
 
-    // Show loading
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
-    btn.disabled = true;
+    btn.disabled  = true;
 
-    // Build WhatsApp message
-    const waMessage = encodeURIComponent(
-      `¡Hola! Me contacto desde la web de The Fresh Cycle.\n\n` +
-      `👤 Nombre: ${name}\n` +
-      `📞 Teléfono: ${phone}\n` +
-      `🎯 Servicio: ${service}\n` +
-      `💬 Mensaje: ${message || 'Sin mensaje adicional'}`
+    const waMsg = encodeURIComponent(
+      `¡Hola The Fresh Cycle! Me contacto desde la web.\n\n` +
+      `👤 *Nombre:* ${name}\n` +
+      `📞 *Teléfono:* ${phone}\n` +
+      `🎯 *Servicio:* ${service}\n` +
+      `💬 *Mensaje:* ${msg || 'Sin mensaje adicional'}`
     );
 
-    // Simulate sending then redirect to WhatsApp
     setTimeout(() => {
-      btn.innerHTML = '<i class="fas fa-check"></i> ¡Enviado! Redirigiendo...';
+      btn.innerHTML = '<i class="fas fa-check"></i> ¡Listo! Redirigiendo...';
       btn.style.background = '#25D366';
       setTimeout(() => {
-        window.open(`https://wa.me/595981234567?text=${waMessage}`, '_blank');
-        btn.innerHTML = originalText;
-        btn.disabled = false;
+        window.open(`https://wa.me/595981234567?text=${waMsg}`, '_blank');
+        btn.innerHTML = orig;
+        btn.disabled  = false;
         btn.style.background = '';
-        contactForm.reset();
-      }, 1000);
-    }, 1000);
+        form.reset();
+      }, 900);
+    }, 800);
   });
 
-  // ---- Smooth scroll for anchors ----
-  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', (e) => {
-      const target = document.querySelector(anchor.getAttribute('href'));
+  // ─── Smooth scroll ───
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      const target = document.querySelector(a.getAttribute('href'));
       if (target) {
         e.preventDefault();
-        const offset = 80;
-        window.scrollTo({
-          top: target.offsetTop - offset,
-          behavior: 'smooth'
-        });
+        window.scrollTo({ top: target.offsetTop - 76, behavior: 'smooth' });
       }
     });
   });
 
-  // ---- Parallax subtle on hero ---- 
-  const heroPattern = document.querySelector('.hero-bg-pattern');
-  if (heroPattern) {
+  // ─── Subtle hero parallax ───
+  const heroBg = document.querySelector('.hero-bg-pattern');
+  if (heroBg) {
     window.addEventListener('scroll', () => {
-      const scrollY = window.scrollY;
-      heroPattern.style.transform = `translateY(${scrollY * 0.15}px)`;
+      heroBg.style.transform = `translateY(${window.scrollY * 0.12}px)`;
     }, { passive: true });
+  }
+
+  // ─── Logo cursor glow effect on hero ───
+  const heroSection = document.querySelector('.hero');
+  if (heroSection) {
+    heroSection.addEventListener('mousemove', e => {
+      const rect = heroSection.getBoundingClientRect();
+      const x = ((e.clientX - rect.left) / rect.width)  * 100;
+      const y = ((e.clientY - rect.top)  / rect.height) * 100;
+      heroSection.style.setProperty('--mx', `${x}%`);
+      heroSection.style.setProperty('--my', `${y}%`);
+    });
   }
 
 });
