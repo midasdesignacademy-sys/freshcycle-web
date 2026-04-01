@@ -1,168 +1,241 @@
-/* ============================================
-   THE FRESH CYCLE — JavaScript Premium v2
-   ============================================ */
+/* ================================================================
+   THE FRESH CYCLE — JavaScript v3
+   Modules: Navbar · Scroll Animations · Counters
+            Portfolio Carousel + Filters + Lightbox
+            Testimonials Carousel · Contact Form · Legal Modal
+   ================================================================ */
 
 document.addEventListener('DOMContentLoaded', () => {
 
-  /* ═══════════════════════════════════════════
-     1. NAVBAR — scroll + active indicator
-     ═══════════════════════════════════════════ */
-  const navbar = document.getElementById('navbar');
+  /* ──────────────────────────────────────────
+     1. NAVBAR — scroll + mobile menu
+  ────────────────────────────────────────── */
+  const navbar     = document.getElementById('navbar');
+  const navToggle  = document.getElementById('navToggle');
+  const navLinks   = document.getElementById('navLinks');
+  const navItems   = document.querySelectorAll('.nav-links a[href^="#"]');
+  const sections   = document.querySelectorAll('section[id]');
 
-  window.addEventListener('scroll', () => {
+  // Scroll: adiciona classe .scrolled
+  const handleNavScroll = () => {
     navbar?.classList.toggle('scrolled', window.scrollY > 60);
-  }, { passive: true });
+  };
+  window.addEventListener('scroll', handleNavScroll, { passive: true });
+  handleNavScroll();
 
-  // Indicador de seção ativa na navbar
-  const sections = document.querySelectorAll('section[id]');
-  const navItems = document.querySelectorAll('.nav-links a[href^="#"]');
-
+  // Active link no scroll
   const updateActiveNav = () => {
     let current = '';
     sections.forEach(s => {
-      if (window.scrollY >= s.offsetTop - 140) current = s.id;
+      if (window.scrollY >= s.offsetTop - 150) current = s.id;
     });
     navItems.forEach(a => {
-      const match = a.getAttribute('href') === `#${current}`;
-      a.classList.toggle('nav-active', match);
+      a.classList.toggle('nav-active', a.getAttribute('href') === `#${current}`);
     });
   };
   window.addEventListener('scroll', updateActiveNav, { passive: true });
-  updateActiveNav();
 
-  /* ═══════════════════════════════════════════
-     2. MOBILE NAV
-     ═══════════════════════════════════════════ */
-  const navToggle = document.getElementById('navToggle');
-  const navLinks  = document.getElementById('navLinks');
-
+  // Mobile toggle
   navToggle?.addEventListener('click', () => {
-    const isOpen = navLinks.classList.toggle('open');
-    const spans  = navToggle.querySelectorAll('span');
-    if (isOpen) {
-      spans[0].style.transform = 'rotate(45deg) translate(5px, 5px)';
-      spans[1].style.opacity   = '0';
-      spans[2].style.transform = 'rotate(-45deg) translate(5px, -5px)';
-    } else {
-      spans.forEach(s => { s.style.transform = ''; s.style.opacity = ''; });
+    const open = navLinks?.classList.toggle('open');
+    navToggle.classList.toggle('open', open);
+    document.body.style.overflow = open ? 'hidden' : '';
+  });
+
+  // Fecha ao clicar em link
+  navItems.forEach(a => {
+    a.addEventListener('click', () => {
+      navLinks?.classList.remove('open');
+      navToggle?.classList.remove('open');
+      document.body.style.overflow = '';
+    });
+  });
+
+  // Fecha ao clicar fora
+  document.addEventListener('click', e => {
+    if (navLinks?.classList.contains('open')
+        && !navLinks.contains(e.target)
+        && !navToggle?.contains(e.target)) {
+      navLinks.classList.remove('open');
+      navToggle?.classList.remove('open');
+      document.body.style.overflow = '';
     }
   });
 
-  navLinks?.querySelectorAll('a').forEach(link => {
-    link.addEventListener('click', () => {
-      navLinks.classList.remove('open');
-      navToggle?.querySelectorAll('span').forEach(s => {
-        s.style.transform = ''; s.style.opacity = '';
-      });
-    });
-  });
 
-  /* ═══════════════════════════════════════════
-     3. SMOOTH SCROLL
-     ═══════════════════════════════════════════ */
-  document.querySelectorAll('a[href^="#"]').forEach(a => {
-    a.addEventListener('click', e => {
-      const target = document.querySelector(a.getAttribute('href'));
-      if (target) {
-        e.preventDefault();
-        window.scrollTo({ top: target.offsetTop - 76, behavior: 'smooth' });
-      }
-    });
-  });
+  /* ──────────────────────────────────────────
+     2. SCROLL ANIMATIONS (Intersection Observer)
+  ────────────────────────────────────────── */
+  const animEls = document.querySelectorAll('[data-anim]');
 
-  /* ═══════════════════════════════════════════
-     4. COUNTER ANIMATION
-     ═══════════════════════════════════════════ */
-  const counters = document.querySelectorAll('.stat-number[data-target]');
-  let countersStarted = false;
-  const easeOutQuart = t => 1 - Math.pow(1 - t, 4);
-
-  const animateCounter = (el) => {
-    const target   = parseInt(el.dataset.target);
-    const duration = 2000;
-    const start    = performance.now();
-    const tick = (now) => {
-      const progress = Math.min((now - start) / duration, 1);
-      el.textContent = Math.floor(easeOutQuart(progress) * target);
-      if (progress < 1) requestAnimationFrame(tick);
-      else el.textContent = target;
-    };
-    requestAnimationFrame(tick);
-  };
-
-  const hero = document.querySelector('.hero');
-  if (hero) {
-    new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting && !countersStarted) {
-        countersStarted = true;
-        setTimeout(() => counters.forEach(animateCounter), 1000);
-      }
-    }, { threshold: 0.4 }).observe(hero);
-  }
-
-  /* ═══════════════════════════════════════════
-     5. SCROLL REVEAL
-     ═══════════════════════════════════════════ */
-  const revealTargets = document.querySelectorAll(
-    '.pf-card, .service-card, .testimonial-card, .pricing-card, .process-step, .value-item, .about-metric, .contact-item, .trust-item, .showcase-card'
-  );
-  revealTargets.forEach(el => el.classList.add('reveal'));
-
-  const revealObs = new IntersectionObserver((entries) => {
+  const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (!entry.isIntersecting) return;
-      const siblings = [...(entry.target.parentElement?.children || [])];
-      const idx = siblings.indexOf(entry.target);
-      setTimeout(() => entry.target.classList.add('visible'), idx * 80);
-      revealObs.unobserve(entry.target);
+      const el    = entry.target;
+      const delay = parseInt(el.dataset.delay || '0', 10);
+      setTimeout(() => {
+        el.classList.add('is-visible');
+      }, delay);
+      observer.unobserve(el);
     });
-  }, { threshold: 0.08, rootMargin: '0px 0px -30px 0px' });
-  revealTargets.forEach(el => revealObs.observe(el));
+  }, { threshold: 0.12 });
 
-  /* ═══════════════════════════════════════════
-     6. PORTFÓLIO — FILTROS
-     ═══════════════════════════════════════════ */
-  const filterBtns     = document.querySelectorAll('.filter-btn');
-  const portfolioItems = document.querySelectorAll('.portfolio-item');
+  animEls.forEach(el => observer.observe(el));
 
-  filterBtns.forEach(btn => {
+
+  /* ──────────────────────────────────────────
+     3. COUNTERS (hero stats)
+  ────────────────────────────────────────── */
+  const counters = document.querySelectorAll('.counter');
+
+  const counterObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      const el     = entry.target;
+      const target = parseInt(el.dataset.target, 10);
+      const duration = 1600;
+      const start  = performance.now();
+
+      const easeOut = t => 1 - Math.pow(1 - t, 3);
+
+      const tick = (now) => {
+        const progress = Math.min((now - start) / duration, 1);
+        el.textContent = Math.round(easeOut(progress) * target);
+        if (progress < 1) requestAnimationFrame(tick);
+        else el.textContent = target;
+      };
+      requestAnimationFrame(tick);
+      counterObserver.unobserve(el);
+    });
+  }, { threshold: 0.5 });
+
+  counters.forEach(el => counterObserver.observe(el));
+
+
+  /* ──────────────────────────────────────────
+     4. PORTFOLIO — Filtros + Carrossel + Lightbox
+  ────────────────────────────────────────── */
+  const pfTrack   = document.getElementById('pfTrack');
+  const pfPrev    = document.getElementById('pfPrev');
+  const pfNext    = document.getElementById('pfNext');
+  const pfDotsWrap = document.getElementById('pfDots');
+  const pfFilters = document.querySelectorAll('.pf-filter');
+  const pfSlides  = Array.from(document.querySelectorAll('.pf-slide'));
+
+  let pfIndex       = 0;
+  let pfVisible     = [];   // slides visíveis após filtro
+  let pfSlidesPerView = getSlidesPerView();
+
+  function getSlidesPerView() {
+    if (window.innerWidth <= 600) return 1;
+    if (window.innerWidth <= 900) return 1;
+    return 3;
+  }
+
+  // Filtro
+  function applyFilter(cat) {
+    pfIndex = 0;
+    pfSlides.forEach(slide => {
+      const match = cat === 'all' || slide.dataset.cat === cat;
+      slide.classList.toggle('hidden', !match);
+    });
+    pfVisible = pfSlides.filter(s => !s.classList.contains('hidden'));
+    buildDots();
+    renderCarousel();
+  }
+
+  pfFilters.forEach(btn => {
     btn.addEventListener('click', () => {
-      filterBtns.forEach(b => b.classList.remove('active'));
+      pfFilters.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      const filter = btn.dataset.filter;
-
-      let visibleCount = 0;
-      portfolioItems.forEach(item => {
-        const match = filter === 'all' || item.dataset.category === filter;
-        if (match) {
-          item.classList.remove('hidden');
-          item.style.opacity = '0';
-          item.style.transform = 'translateY(20px)';
-          const delay = visibleCount * 60;
-          setTimeout(() => {
-            item.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
-            item.style.opacity    = '1';
-            item.style.transform  = 'translateY(0)';
-          }, delay);
-          visibleCount++;
-        } else {
-          item.style.transition = 'opacity 0.2s ease';
-          item.style.opacity    = '0';
-          setTimeout(() => {
-            item.classList.add('hidden');
-            item.style.transition = '';
-            item.style.opacity    = '';
-            item.style.transform  = '';
-          }, 200);
-        }
-      });
+      applyFilter(btn.dataset.filter);
     });
   });
 
-  /* ═══════════════════════════════════════════
-     7. LIGHTBOX
-     ═══════════════════════════════════════════ */
-  const lightbox = document.getElementById('pfLightbox');
+  // Dots
+  function buildDots() {
+    if (!pfDotsWrap) return;
+    const pages = Math.ceil(pfVisible.length / pfSlidesPerView);
+    pfDotsWrap.innerHTML = '';
+    for (let i = 0; i < pages; i++) {
+      const dot = document.createElement('button');
+      dot.className = 'pf-dot' + (i === 0 ? ' active' : '');
+      dot.setAttribute('aria-label', `Página ${i + 1}`);
+      dot.addEventListener('click', () => {
+        pfIndex = i * pfSlidesPerView;
+        pfIndex = Math.min(pfIndex, Math.max(0, pfVisible.length - pfSlidesPerView));
+        renderCarousel();
+        updateDots();
+      });
+      pfDotsWrap.appendChild(dot);
+    }
+  }
+
+  function updateDots() {
+    if (!pfDotsWrap) return;
+    const dots = pfDotsWrap.querySelectorAll('.pf-dot');
+    const page = Math.floor(pfIndex / pfSlidesPerView);
+    dots.forEach((d, i) => d.classList.toggle('active', i === page));
+  }
+
+  function renderCarousel() {
+    if (!pfTrack) return;
+    // Calcula offset com base nos slides visíveis
+    const gapPx = 24;
+    const trackWidth = pfTrack.parentElement?.clientWidth || 0;
+    const slideWidth = (trackWidth - gapPx * (pfSlidesPerView - 1)) / pfSlidesPerView;
+
+    // Move apenas slides visíveis
+    pfVisible.forEach((slide, i) => {
+      slide.style.display = '';
+    });
+
+    const offset = pfIndex * (slideWidth + gapPx);
+    pfTrack.style.transform = `translateX(-${offset}px)`;
+    updateDots();
+  }
+
+  function pfGoNext() {
+    const maxIndex = Math.max(0, pfVisible.length - pfSlidesPerView);
+    pfIndex = Math.min(pfIndex + pfSlidesPerView, maxIndex);
+    renderCarousel();
+    updateDots();
+  }
+  function pfGoPrev() {
+    pfIndex = Math.max(0, pfIndex - pfSlidesPerView);
+    renderCarousel();
+    updateDots();
+  }
+
+  pfNext?.addEventListener('click', pfGoNext);
+  pfPrev?.addEventListener('click', pfGoPrev);
+
+  // Touch/swipe no carrossel
+  let pfTouchStart = 0;
+  pfTrack?.addEventListener('touchstart', e => {
+    pfTouchStart = e.touches[0].clientX;
+  }, { passive: true });
+  pfTrack?.addEventListener('touchend', e => {
+    const diff = pfTouchStart - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 50) {
+      diff > 0 ? pfGoNext() : pfGoPrev();
+    }
+  });
+
+  // Resize
+  window.addEventListener('resize', () => {
+    pfSlidesPerView = getSlidesPerView();
+    pfIndex = 0;
+    buildDots();
+    renderCarousel();
+  });
+
+  // Init
+  applyFilter('all');
+
+
+  /* ──── Lightbox ──── */
+  const lightbox = document.getElementById('lightbox');
   const lbImg    = document.getElementById('lbImg');
   const lbTitle  = document.getElementById('lbTitle');
   const lbDesc   = document.getElementById('lbDesc');
@@ -170,214 +243,332 @@ document.addEventListener('DOMContentLoaded', () => {
   const lbPrev   = document.getElementById('lbPrev');
   const lbNext   = document.getElementById('lbNext');
 
-  let lbItems     = [];
-  let lbCurrent   = 0;
+  let lbItems   = [];
+  let lbCurrent = 0;
 
-  const buildLbItems = (filter = 'all') => {
-    lbItems = [...portfolioItems]
-      .filter(item => filter === 'all' || item.dataset.category === filter)
-      .filter(item => !item.classList.contains('hidden'));
+  function openLightbox(items, index) {
+    lbItems   = items;
+    lbCurrent = index;
+    showLbItem(lbCurrent);
+    lightbox?.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function showLbItem(i) {
+    const item = lbItems[i];
+    if (!item || !lbImg) return;
+    lbImg.style.opacity = '0';
+    setTimeout(() => {
+      lbImg.src = item.img;
+      lbImg.alt = item.title;
+      if (lbTitle) lbTitle.textContent = item.title;
+      if (lbDesc)  lbDesc.textContent  = item.desc;
+      lbImg.style.opacity = '1';
+    }, 150);
+    lbImg.style.transition = 'opacity 0.2s';
+  }
+
+  function closeLightbox() {
+    lightbox?.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  lbClose?.addEventListener('click', closeLightbox);
+  lightbox?.addEventListener('click', e => {
+    if (e.target === lightbox) closeLightbox();
+  });
+
+  lbPrev?.addEventListener('click', () => {
+    lbCurrent = (lbCurrent - 1 + lbItems.length) % lbItems.length;
+    showLbItem(lbCurrent);
+  });
+  lbNext?.addEventListener('click', () => {
+    lbCurrent = (lbCurrent + 1) % lbItems.length;
+    showLbItem(lbCurrent);
+  });
+
+  document.addEventListener('keydown', e => {
+    if (!lightbox?.classList.contains('open')) return;
+    if (e.key === 'Escape') closeLightbox();
+    if (e.key === 'ArrowLeft')  { lbCurrent = (lbCurrent - 1 + lbItems.length) % lbItems.length; showLbItem(lbCurrent); }
+    if (e.key === 'ArrowRight') { lbCurrent = (lbCurrent + 1) % lbItems.length; showLbItem(lbCurrent); }
+  });
+
+  // Botões de zoom em cada card
+  document.querySelectorAll('.pf-zoom-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const card  = btn.closest('.pf-card');
+      if (!card) return;
+
+      // Coleta todos os cards visíveis na ordem atual
+      const visibleCards = pfVisible
+        .map(slide => slide.querySelector('.pf-card'))
+        .filter(Boolean);
+
+      const items = visibleCards.map(c => ({
+        img:   c.dataset.img   || c.querySelector('img')?.src || '',
+        title: c.dataset.title || '',
+        desc:  c.dataset.desc  || '',
+      }));
+
+      const allCards = document.querySelectorAll('.pf-card');
+      let index = 0;
+      allCards.forEach((c, i) => { if (c === card) index = i; });
+
+      // Recalcula index dentro dos visíveis
+      const visibleIdx = visibleCards.indexOf(card);
+      openLightbox(items, Math.max(0, visibleIdx));
+    });
+  });
+
+  // Clique no card também abre lightbox
+  document.querySelectorAll('.pf-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const btn = card.querySelector('.pf-zoom-btn');
+      btn?.click();
+    });
+  });
+
+
+  /* ──────────────────────────────────────────
+     5. TESTIMONIALS — Carrossel automático
+  ────────────────────────────────────────── */
+  const testiTrack  = document.getElementById('testiTrack');
+  const testiPrev   = document.getElementById('testiPrev');
+  const testiNext   = document.getElementById('testiNext');
+  const testiDotsEl = document.getElementById('testiDots');
+  const testiSlides = document.querySelectorAll('.testi-slide');
+
+  let testiIndex    = 0;
+  const testiTotal  = testiSlides.length;
+  let testiAuto;
+
+  // Dots
+  function buildTestiDots() {
+    if (!testiDotsEl) return;
+    testiDotsEl.innerHTML = '';
+    for (let i = 0; i < testiTotal; i++) {
+      const dot = document.createElement('button');
+      dot.className = 'testi-dot' + (i === 0 ? ' active' : '');
+      dot.setAttribute('aria-label', `Testimonio ${i + 1}`);
+      dot.addEventListener('click', () => {
+        testiIndex = i;
+        renderTesti();
+        resetTestiAuto();
+      });
+      testiDotsEl.appendChild(dot);
+    }
+  }
+
+  function renderTesti() {
+    if (!testiTrack) return;
+    testiTrack.style.transform = `translateX(-${testiIndex * 100}%)`;
+    // Atualiza dots
+    testiDotsEl?.querySelectorAll('.testi-dot').forEach((d, i) => {
+      d.classList.toggle('active', i === testiIndex);
+    });
+  }
+
+  function testiGoNext() {
+    testiIndex = (testiIndex + 1) % testiTotal;
+    renderTesti();
+  }
+  function testiGoPrev() {
+    testiIndex = (testiIndex - 1 + testiTotal) % testiTotal;
+    renderTesti();
+  }
+
+  testiNext?.addEventListener('click', () => { testiGoNext(); resetTestiAuto(); });
+  testiPrev?.addEventListener('click', () => { testiGoPrev(); resetTestiAuto(); });
+
+  function startTestiAuto() {
+    testiAuto = setInterval(testiGoNext, 5000);
+  }
+  function resetTestiAuto() {
+    clearInterval(testiAuto);
+    startTestiAuto();
+  }
+
+  // Touch/swipe nos testimonials
+  let testiTouchStart = 0;
+  testiTrack?.addEventListener('touchstart', e => {
+    testiTouchStart = e.touches[0].clientX;
+    clearInterval(testiAuto);
+  }, { passive: true });
+  testiTrack?.addEventListener('touchend', e => {
+    const diff = testiTouchStart - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 50) {
+      diff > 0 ? testiGoNext() : testiGoPrev();
+    }
+    startTestiAuto();
+  });
+
+  buildTestiDots();
+  renderTesti();
+  startTestiAuto();
+
+  // Pausa ao hover
+  const testiCarousel = document.querySelector('.testi-carousel');
+  testiCarousel?.addEventListener('mouseenter', () => clearInterval(testiAuto));
+  testiCarousel?.addEventListener('mouseleave', startTestiAuto);
+
+
+  /* ──────────────────────────────────────────
+     6. CONTACT FORM
+  ────────────────────────────────────────── */
+  const contactForm = document.getElementById('contactForm');
+  const formToast   = document.getElementById('formToast');
+
+  contactForm?.addEventListener('submit', e => {
+    e.preventDefault();
+
+    const data = new FormData(contactForm);
+    const nome     = contactForm.querySelector('input[type="text"]')?.value || '';
+    const whatsapp = contactForm.querySelector('input[type="tel"]')?.value || '';
+    const servico  = data.get('servicio') || '';
+    const email    = contactForm.querySelector('input[type="email"]')?.value || '';
+    const mensagem = contactForm.querySelector('textarea')?.value || '';
+
+    // Monta mensagem WhatsApp
+    const waMsg = encodeURIComponent(
+      `Hola! 👋 Vengo desde el sitio web.\n\n` +
+      `*Nombre:* ${nome}\n` +
+      `*WhatsApp:* ${whatsapp}\n` +
+      (email    ? `*Email:* ${email}\n` : '') +
+      (servico  ? `*Servicio:* ${servico}\n` : '') +
+      (mensagem ? `*Mensaje:* ${mensagem}\n` : '') +
+      `\nQuiero una consulta gratuita.`
+    );
+
+    window.open(`https://wa.me/595981234567?text=${waMsg}`, '_blank');
+
+    // Toast
+    formToast?.classList.add('show');
+    setTimeout(() => formToast?.classList.remove('show'), 4000);
+    contactForm.reset();
+  });
+
+
+  /* ──────────────────────────────────────────
+     7. MODAL LEGAL
+  ────────────────────────────────────────── */
+  const legalModal   = document.getElementById('legalModal');
+  const legalClose   = document.getElementById('legalClose');
+  const legalContent = document.getElementById('legalContent');
+
+  const legalTexts = {
+    privacy: `
+      <h2>Política de Privacidad</h2>
+      <p>En <strong>The Fresh Cycle</strong>, nos comprometemos a proteger la información personal de nuestros clientes y visitantes.</p>
+      <p><strong>Datos recopilados:</strong> Solo recopilamos datos que usted nos proporciona voluntariamente a través de nuestros formularios de contacto (nombre, WhatsApp, email).</p>
+      <p><strong>Uso de datos:</strong> Sus datos son utilizados exclusivamente para contactarle en relación con los servicios solicitados. No vendemos ni compartimos datos con terceros.</p>
+      <p><strong>Retención:</strong> Conservamos sus datos mientras mantengamos una relación comercial activa. Puede solicitar la eliminación en cualquier momento.</p>
+      <p><strong>Contacto:</strong> Para cualquier consulta sobre privacidad: <a href="mailto:info@thefreshcycle.com">info@thefreshcycle.com</a></p>
+      <p><em>Última actualización: Enero 2026</em></p>
+    `,
+    terms: `
+      <h2>Términos de Uso</h2>
+      <p>Al utilizar el sitio web de <strong>The Fresh Cycle</strong>, usted acepta los siguientes términos:</p>
+      <p><strong>Servicios:</strong> The Fresh Cycle ofrece servicios de marketing digital, diseño, tráfico pago y sistemas digitales. Los precios y alcances se definen en propuestas individuales.</p>
+      <p><strong>Propiedad intelectual:</strong> Todo el contenido de este sitio es propiedad de The Fresh Cycle. Los diseños entregados al cliente son de su propiedad una vez completado el pago.</p>
+      <p><strong>Pagos:</strong> Los términos de pago se acuerdan en cada contrato. No existen contratos de permanencia obligatoria salvo que se especifique lo contrario.</p>
+      <p><strong>Cancelación:</strong> El cliente puede cancelar los servicios en cualquier momento con aviso previo de 15 días.</p>
+      <p><strong>Jurisdicción:</strong> Estos términos se rigen por las leyes de la República del Paraguay.</p>
+      <p><em>Última actualización: Enero 2026</em></p>
+    `
   };
 
-  const openLightbox = (item) => {
-    buildLbItems();
-    lbCurrent = lbItems.indexOf(item);
-    showLbItem(lbCurrent);
-    lightbox.classList.add('open');
+  window.openLegalModal = function(type) {
+    if (!legalModal || !legalContent) return;
+    legalContent.innerHTML = legalTexts[type] || '';
+    legalModal.classList.add('open');
     document.body.style.overflow = 'hidden';
   };
 
-  const closeLightbox = () => {
-    lightbox.classList.remove('open');
+  legalClose?.addEventListener('click', () => {
+    legalModal?.classList.remove('open');
     document.body.style.overflow = '';
-  };
+  });
 
-  const showLbItem = (idx) => {
-    const item = lbItems[idx];
-    if (!item) return;
-    const img   = item.dataset.img   || '';
-    const title = item.dataset.title || '';
-    const desc  = item.dataset.desc  || '';
-    lbImg.style.opacity   = '0';
-    lbImg.style.transform = 'scale(0.95)';
-    setTimeout(() => {
-      lbImg.src            = img;
-      lbTitle.textContent  = title;
-      lbDesc.textContent   = desc;
-      lbImg.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-      lbImg.style.opacity    = '1';
-      lbImg.style.transform  = 'scale(1)';
-    }, 150);
-    // Prev/Next visibility
-    lbPrev.style.opacity = idx > 0 ? '1' : '0.3';
-    lbNext.style.opacity = idx < lbItems.length - 1 ? '1' : '0.3';
-  };
+  legalModal?.addEventListener('click', e => {
+    if (e.target === legalModal) {
+      legalModal.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+  });
 
-  // Abrir ao clicar no zoom ou na imagem
-  document.querySelectorAll('.pf-zoom, .pf-img-wrap img').forEach(el => {
-    el.addEventListener('click', e => {
-      e.stopPropagation();
-      const item = el.closest('.portfolio-item');
-      if (item) openLightbox(item);
+
+  /* ──────────────────────────────────────────
+     8. SCROLL SUAVE para links internos
+  ────────────────────────────────────────── */
+  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', e => {
+      const target = document.querySelector(anchor.getAttribute('href'));
+      if (!target) return;
+      e.preventDefault();
+      const offset = 80; // altura navbar
+      const top = target.getBoundingClientRect().top + window.scrollY - offset;
+      window.scrollTo({ top, behavior: 'smooth' });
     });
   });
 
-  lbClose?.addEventListener('click', closeLightbox);
-  lightbox?.addEventListener('click', e => { if (e.target === lightbox) closeLightbox(); });
 
-  lbPrev?.addEventListener('click', () => {
-    if (lbCurrent > 0) { lbCurrent--; showLbItem(lbCurrent); }
-  });
-  lbNext?.addEventListener('click', () => {
-    if (lbCurrent < lbItems.length - 1) { lbCurrent++; showLbItem(lbCurrent); }
-  });
-
-  // Teclado
-  document.addEventListener('keydown', e => {
-    if (!lightbox?.classList.contains('open')) return;
-    if (e.key === 'Escape')     closeLightbox();
-    if (e.key === 'ArrowLeft')  { if (lbCurrent > 0) { lbCurrent--; showLbItem(lbCurrent); } }
-    if (e.key === 'ArrowRight') { if (lbCurrent < lbItems.length - 1) { lbCurrent++; showLbItem(lbCurrent); } }
-  });
-
-  /* ═══════════════════════════════════════════
-     8. CONTACT FORM → WHATSAPP
-     ═══════════════════════════════════════════ */
-  const form = document.getElementById('contactForm');
-  form?.addEventListener('submit', e => {
-    e.preventDefault();
-    const btn  = form.querySelector('button[type="submit"]');
-    const orig = btn.innerHTML;
-
-    const name    = form.querySelector('input[type="text"]')?.value  || '';
-    const phone   = form.querySelector('input[type="tel"]')?.value   || '';
-    const service = form.querySelector('input[name="servicio"]:checked')?.value || '';
-    const msg     = form.querySelector('textarea')?.value            || '';
-
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
-    btn.disabled  = true;
-
-    const waMsg = encodeURIComponent(
-      `¡Hola The Fresh Cycle! Me contacto desde la web.\n\n` +
-      `👤 *Nombre:* ${name}\n` +
-      `📞 *Teléfono:* ${phone}\n` +
-      `🎯 *Servicio:* ${service || 'No especificado'}\n` +
-      `💬 *Mensaje:* ${msg || 'Sin mensaje adicional'}`
-    );
-
-    setTimeout(() => {
-      btn.innerHTML = '<i class="fas fa-check"></i> ¡Listo! Redirigiendo...';
-      btn.style.background = '#25D366';
+  /* ──────────────────────────────────────────
+     9. PROCESS STEPS — animação de entrada
+  ────────────────────────────────────────── */
+  const processSteps = document.querySelectorAll('.process-step');
+  const processObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry, i) => {
+      if (!entry.isIntersecting) return;
       setTimeout(() => {
-        window.open(`https://wa.me/595981234567?text=${waMsg}`, '_blank');
-        btn.innerHTML        = orig;
-        btn.disabled         = false;
-        btn.style.background = '';
-        form.reset();
-      }, 900);
-    }, 800);
+        entry.target.style.opacity = '1';
+        entry.target.style.transform = 'translateY(0)';
+      }, i * 120);
+      processObserver.unobserve(entry.target);
+    });
+  }, { threshold: 0.2 });
+
+  processSteps.forEach(step => {
+    step.style.opacity = '0';
+    step.style.transform = 'translateY(24px)';
+    step.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+    processObserver.observe(step);
   });
 
-  /* ═══════════════════════════════════════════
-     9. WHATSAPP FLOAT — pulse attention
-     ═══════════════════════════════════════════ */
-  const waFloat = document.querySelector('.whatsapp-float');
-  if (waFloat) {
-    // Aparece após 3s
-    setTimeout(() => waFloat.classList.add('visible'), 3000);
-    // Pulse periódico
-    setInterval(() => {
-      waFloat.classList.add('pulse-anim');
-      setTimeout(() => waFloat.classList.remove('pulse-anim'), 1000);
-    }, 8000);
-  }
 
-  /* ═══════════════════════════════════════════
-     10. HERO CURSOR SPOTLIGHT
-     ═══════════════════════════════════════════ */
-  const heroSection = document.querySelector('.hero');
-  if (heroSection) {
-    heroSection.addEventListener('mousemove', e => {
-      const rect = heroSection.getBoundingClientRect();
-      const x = ((e.clientX - rect.left) / rect.width)  * 100;
-      const y = ((e.clientY - rect.top)  / rect.height) * 100;
-      heroSection.style.setProperty('--mx', `${x}%`);
-      heroSection.style.setProperty('--my', `${y}%`);
+  /* ──────────────────────────────────────────
+     10. PRICING CARDS — stagger animation
+  ────────────────────────────────────────── */
+  const priceCards = document.querySelectorAll('.price-card');
+  const priceObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      const cards = entry.target.querySelectorAll('.price-card');
+      cards.forEach((card, i) => {
+        setTimeout(() => {
+          card.style.opacity = '1';
+          card.style.transform = card.classList.contains('price-featured')
+            ? 'translateY(-8px) scale(1.02)'
+            : 'translateY(0)';
+        }, i * 100);
+      });
+      priceObserver.unobserve(entry.target);
     });
-  }
+  }, { threshold: 0.1 });
 
-  /* ═══════════════════════════════════════════
-     11. SERVICE CHIPS — seleção visual
-     ═══════════════════════════════════════════ */
-  document.querySelectorAll('.chip-option input[type="radio"]').forEach(radio => {
-    radio.addEventListener('change', () => {
-      document.querySelectorAll('.chip-option').forEach(c => c.classList.remove('selected'));
-      if (radio.checked) radio.closest('.chip-option')?.classList.add('selected');
+  const pricingGrid = document.querySelector('.pricing-grid');
+  if (pricingGrid) {
+    priceCards.forEach(card => {
+      const base = card.classList.contains('price-featured')
+        ? 'translateY(8px) scale(1.02)'
+        : 'translateY(16px)';
+      card.style.opacity = '0';
+      card.style.transform = base;
+      card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
     });
-  });
-
-});
-
-/* ═══════════════════════════════════════════
-   12. MODAL LEGAL — Privacidade e Termos
-   ═══════════════════════════════════════════ */
-const legalTexts = {
-  privacy: {
-    title: 'Política de Privacidad',
-    body: `
-      <p>En <strong>The Fresh Cycle</strong> respetamos tu privacidad y nos comprometemos a proteger tus datos personales.</p>
-      <h4>Datos que recopilamos</h4>
-      <p>Solo recopilamos la información que nos proporcionás voluntariamente a través de nuestro formulario de contacto: nombre, WhatsApp, email y servicio de interés.</p>
-      <h4>¿Cómo usamos tus datos?</h4>
-      <p>Tus datos se utilizan exclusivamente para contactarte en respuesta a tu consulta. <strong>Nunca vendemos ni compartimos tu información</strong> con terceros.</p>
-      <h4>Almacenamiento</h4>
-      <p>Los datos del formulario son enviados directamente a nuestro WhatsApp y no se almacenan en ningún servidor. No utilizamos cookies de rastreo.</p>
-      <h4>Tus derechos</h4>
-      <p>Podés solicitar la eliminación de tus datos en cualquier momento contactándonos por email a <a href="mailto:info@thefreshcycle.com">info@thefreshcycle.com</a>.</p>
-      <p><em>Vigente desde enero de 2026 &middot; Asunción, Paraguay</em></p>
-    `
-  },
-  terms: {
-    title: 'Términos de Uso',
-    body: `
-      <p>Al utilizar el sitio web de <strong>The Fresh Cycle</strong>, aceptas los siguientes términos:</p>
-      <h4>Servicios</h4>
-      <p>Los servicios ofrecidos (diseño, tráfico pago y sistemas digitales) son prestados según los paquetes acordados por escrito entre el cliente y The Fresh Cycle.</p>
-      <h4>Pagos y cancelación</h4>
-      <p>Los pagos son mensuales. No existe permanencia obligatoria. El cliente puede cancelar con 15 días de anticipación al próximo ciclo de facturación.</p>
-      <h4>Propiedad intelectual</h4>
-      <p>Todos los diseños y materiales creados son propiedad del cliente una vez realizado el pago completo del servicio.</p>
-      <h4>Limitación de responsabilidad</h4>
-      <p>The Fresh Cycle no se hace responsable por resultados de campañas que dependan de factores externos como algoritmos de plataformas o estacionalidad del mercado.</p>
-      <h4>Contacto</h4>
-      <p>Para consultas sobre estos términos: <a href="mailto:info@thefreshcycle.com">info@thefreshcycle.com</a></p>
-      <p><em>Vigente desde enero de 2026 · Asunción, Paraguay</em></p>
-    `
+    priceObserver.observe(pricingGrid);
   }
-};
 
-function openLegalModal(type) {
-  const modal   = document.getElementById('legalModal');
-  const content = document.getElementById('legalContent');
-  const data    = legalTexts[type];
-  if (!modal || !data) return;
-  content.innerHTML = `<h3>${data.title}</h3>${data.body}`;
-  modal.classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
-
-function closeLegalModal() {
-  const modal = document.getElementById('legalModal');
-  modal?.classList.remove('open');
-  document.body.style.overflow = '';
-}
-
-document.getElementById('legalClose')?.addEventListener('click', closeLegalModal);
-document.getElementById('legalModal')?.addEventListener('click', e => {
-  if (e.target.id === 'legalModal') closeLegalModal();
-});
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && document.getElementById('legalModal')?.classList.contains('open')) {
-    closeLegalModal();
-  }
+  console.log('🌿 The Fresh Cycle — v3 loaded');
 });
