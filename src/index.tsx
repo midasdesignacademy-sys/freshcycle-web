@@ -10,6 +10,75 @@ app.get('/', (c) => {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>The Fresh Cycle | Agencia de Marketing Digital — Asunción, Paraguay</title>
   <meta name="description" content="Agencia de marketing digital en Asunción, Paraguay. Diseños profesionales, tráfico pago y sistemas digitales. Cada cliente, una estrategia única.">
+  <meta name="robots" content="index, follow">
+  <meta name="author" content="The Fresh Cycle">
+  <link rel="canonical" href="https://freshcycle-web.pages.dev/">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://freshcycle-web.pages.dev/">
+  <meta property="og:title" content="The Fresh Cycle | Agencia de Marketing Digital — Asunción, Paraguay">
+  <meta property="og:description" content="Agencia de marketing digital en Asunción, Paraguay. Diseños profesionales, tráfico pago y sistemas digitales. Cada cliente, una estrategia única.">
+  <meta property="og:image" content="https://freshcycle-web.pages.dev/static/images/banner/BANNER_PC.webp">
+  <meta property="og:locale" content="es_PY">
+  <meta property="og:site_name" content="The Fresh Cycle">
+
+  <!-- Twitter / X -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="The Fresh Cycle | Agencia de Marketing Digital — Asunción, Paraguay">
+  <meta name="twitter:description" content="Agencia de marketing digital en Asunción, Paraguay. Diseños profesionales, tráfico pago y sistemas digitales.">
+  <meta name="twitter:image" content="https://freshcycle-web.pages.dev/static/images/banner/BANNER_PC.webp">
+
+  <!-- JSON-LD Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": ["LocalBusiness", "ProfessionalService"],
+        "@id": "https://freshcycle-web.pages.dev/#organization",
+        "name": "The Fresh Cycle",
+        "description": "Agencia de marketing digital en Asunción, Paraguay. Diseños profesionales, tráfico pago y sistemas digitales. Cada cliente, una estrategia única.",
+        "url": "https://freshcycle-web.pages.dev",
+        "logo": "https://freshcycle-web.pages.dev/static/images/logo.webp",
+        "image": "https://freshcycle-web.pages.dev/static/images/banner/BANNER_PC.webp",
+        "telephone": "+595981234567",
+        "email": "info@thefreshcycle.com",
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": "Asunción",
+          "addressCountry": "PY"
+        },
+        "areaServed": ["Paraguay", "Argentina", "Brasil"],
+        "serviceType": [
+          "Marketing Digital",
+          "Diseño Gráfico",
+          "Publicidad en Redes Sociales",
+          "Google Ads",
+          "Meta Ads",
+          "Desarrollo Web",
+          "E-commerce",
+          "CRM y Automatización"
+        ],
+        "openingHoursSpecification": {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday"],
+          "opens": "09:00",
+          "closes": "18:00"
+        }
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://freshcycle-web.pages.dev/#website",
+        "url": "https://freshcycle-web.pages.dev",
+        "name": "The Fresh Cycle",
+        "publisher": { "@id": "https://freshcycle-web.pages.dev/#organization" },
+        "inLanguage": "es-PY"
+      }
+    ]
+  }
+  </script>
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,600&family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -42,6 +111,7 @@ app.get('/', (c) => {
 
   <!-- ═══════════════════════════════ HERO ═══════════════════════════════ -->
   <section class="hero" id="inicio">
+    <h1 class="sr-only">Agencia de Marketing Digital en Asunción, Paraguay — The Fresh Cycle</h1>
     <picture class="hero-banner">
       <source srcset="/static/images/banner/BANNER_CELULAR.webp" media="(max-width: 767px)">
       <source srcset="/static/images/banner/BANNER_TABLET.webp" media="(max-width: 1199px)">
@@ -92,7 +162,7 @@ app.get('/', (c) => {
     <div class="svc-accordion" data-anim="fade-up" data-delay="80">
 
       <!-- Panel 01 — Diseños Profesionales -->
-      <div class="svc-panel svc-p1" tabindex="0">
+      <div class="svc-panel svc-p1" tabindex="0" data-anim="svc-slide">
         <div class="svc-art">
           <div class="spa-bg spa-bg--logo" style="background-image:url('/static/images/logo.png');background-size:contain;background-repeat:no-repeat;background-position:center;"></div>
         </div>
@@ -122,7 +192,7 @@ app.get('/', (c) => {
       </div>
 
       <!-- Panel 02 — Tráfico Pago & Leads -->
-      <div class="svc-panel svc-p2" tabindex="0">
+      <div class="svc-panel svc-p2" tabindex="0" data-anim="svc-slide">
         <div class="svc-art">
           <div class="spa-bg spa-bg--logo" style="background-image:url('/static/images/portfolio/capa_trafico.webp');"></div>
           <div class="spa-screen spa-screen--traffic">
@@ -154,7 +224,7 @@ app.get('/', (c) => {
       </div>
 
       <!-- Panel 03 — Sistemas Digitales -->
-      <div class="svc-panel svc-p3" tabindex="0">
+      <div class="svc-panel svc-p3" tabindex="0" data-anim="svc-slide">
         <div class="svc-art">
           <div class="spa-bg spa-bg--logo" style="background-image:url('/static/images/portfolio/capa_sistemas.webp');"></div>
           <div class="spa-screen spa-screen--main">
@@ -194,7 +264,7 @@ app.get('/', (c) => {
       </div>
 
       <!-- Panel 04 — CRM & Automatización -->
-      <div class="svc-panel svc-p4" tabindex="0">
+      <div class="svc-panel svc-p4" tabindex="0" data-anim="svc-slide">
         <div class="svc-art">
           <div class="spa-bg spa-bg--logo" style="background-image:url('/static/images/portfolio/capa_automaciones.webp');"></div>
         </div>
@@ -652,7 +722,7 @@ app.get('/', (c) => {
       <!-- RIGHT — cream content panel -->
       <div class="about-content">
         <div class="sec-pill">Sobre nosotros</div>
-        <h2 class="sec-title about-title">Somos <em>The<br>Fresh Cycle</em></h2>
+        <h2 class="sec-title about-title">Somos <em class="brand-name">The<br>Fresh Cycle</em></h2>
         <p class="about-desc">Somos una agencia de marketing digital con sede en <strong>Asunción, Paraguay</strong>. Nuestra misión es simple: <strong>aumentar las ventas de nuestros clientes</strong> usando tecnología y estrategias digitales de alto impacto.</p>
         <p class="about-desc">No existen fórmulas genéricas aquí — cada cliente recibe una estrategia construida desde cero, adaptada a su industria y sus objetivos.</p>
 
