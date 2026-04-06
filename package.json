@@ -13,12 +13,12 @@
     "git:log": "git log --oneline -10"
   },
   "dependencies": {
-    "hono": "^4.12.9"
+    "hono": "^4.12.10"
   },
   "devDependencies": {
-    "@hono/vite-build": "^1.2.0",
-    "@hono/vite-dev-server": "^0.18.2",
+    "@hono/vite-build": "^1.11.1",
+    "@hono/vite-dev-server": "^0.25.1",
     "vite": "^6.3.5",
-    "wrangler": "^4.4.0"
+    "wrangler": "^4.80.0"
   }
 }

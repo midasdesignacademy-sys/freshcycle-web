@@ -113,222 +113,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
   /* ──────────────────────────────────────────
-     4. PORTFOLIO — Filtros + Carrossel + Lightbox
+     4. PORTFOLIO — Infinite scroll (CSS-driven)
+     Nenhum JS necessário — animação via CSS.
   ────────────────────────────────────────── */
-  const pfTrack   = document.getElementById('pfTrack');
-  const pfPrev    = document.getElementById('pfPrev');
-  const pfNext    = document.getElementById('pfNext');
-  const pfDotsWrap = document.getElementById('pfDots');
-  const pfFilters = document.querySelectorAll('.pf-filter');
-  const pfSlides  = Array.from(document.querySelectorAll('.pf-slide'));
-
-  let pfIndex       = 0;
-  let pfVisible     = [];   // slides visíveis após filtro
-  let pfSlidesPerView = getSlidesPerView();
-
-  function getSlidesPerView() {
-    if (window.innerWidth <= 600) return 1;
-    if (window.innerWidth <= 900) return 1;
-    return 3;
-  }
-
-  // Filtro
-  function applyFilter(cat) {
-    pfIndex = 0;
-    pfSlides.forEach(slide => {
-      const match = cat === 'all' || slide.dataset.cat === cat;
-      slide.classList.toggle('hidden', !match);
-    });
-    pfVisible = pfSlides.filter(s => !s.classList.contains('hidden'));
-    buildDots();
-    renderCarousel();
-  }
-
-  pfFilters.forEach(btn => {
-    btn.addEventListener('click', () => {
-      pfFilters.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      applyFilter(btn.dataset.filter);
-    });
-  });
-
-  // Dots
-  function buildDots() {
-    if (!pfDotsWrap) return;
-    const pages = Math.ceil(pfVisible.length / pfSlidesPerView);
-    pfDotsWrap.innerHTML = '';
-    for (let i = 0; i < pages; i++) {
-      const dot = document.createElement('button');
-      dot.className = 'pf-dot' + (i === 0 ? ' active' : '');
-      dot.setAttribute('aria-label', `Página ${i + 1}`);
-      dot.addEventListener('click', () => {
-        pfIndex = i * pfSlidesPerView;
-        pfIndex = Math.min(pfIndex, Math.max(0, pfVisible.length - pfSlidesPerView));
-        renderCarousel();
-        updateDots();
-      });
-      pfDotsWrap.appendChild(dot);
-    }
-  }
-
-  function updateDots() {
-    if (!pfDotsWrap) return;
-    const dots = pfDotsWrap.querySelectorAll('.pf-dot');
-    const page = Math.floor(pfIndex / pfSlidesPerView);
-    dots.forEach((d, i) => d.classList.toggle('active', i === page));
-  }
-
-  function renderCarousel() {
-    if (!pfTrack) return;
-    // Calcula offset com base nos slides visíveis
-    const gapPx = 24;
-    const trackWidth = pfTrack.parentElement?.clientWidth || 0;
-    const slideWidth = (trackWidth - gapPx * (pfSlidesPerView - 1)) / pfSlidesPerView;
-
-    // Move apenas slides visíveis
-    pfVisible.forEach((slide, i) => {
-      slide.style.display = '';
-    });
-
-    const offset = pfIndex * (slideWidth + gapPx);
-    pfTrack.style.transform = `translateX(-${offset}px)`;
-    updateDots();
-  }
-
-  function pfGoNext() {
-    const maxIndex = Math.max(0, pfVisible.length - pfSlidesPerView);
-    pfIndex = Math.min(pfIndex + pfSlidesPerView, maxIndex);
-    renderCarousel();
-    updateDots();
-  }
-  function pfGoPrev() {
-    pfIndex = Math.max(0, pfIndex - pfSlidesPerView);
-    renderCarousel();
-    updateDots();
-  }
-
-  pfNext?.addEventListener('click', pfGoNext);
-  pfPrev?.addEventListener('click', pfGoPrev);
-
-  // Touch/swipe no carrossel
-  let pfTouchStart = 0;
-  pfTrack?.addEventListener('touchstart', e => {
-    pfTouchStart = e.touches[0].clientX;
-  }, { passive: true });
-  pfTrack?.addEventListener('touchend', e => {
-    const diff = pfTouchStart - e.changedTouches[0].clientX;
-    if (Math.abs(diff) > 50) {
-      diff > 0 ? pfGoNext() : pfGoPrev();
-    }
-  });
-
-  // Resize
-  window.addEventListener('resize', () => {
-    pfSlidesPerView = getSlidesPerView();
-    pfIndex = 0;
-    buildDots();
-    renderCarousel();
-  });
-
-  // Init
-  applyFilter('all');
-
-
-  /* ──── Lightbox ──── */
-  const lightbox = document.getElementById('lightbox');
-  const lbImg    = document.getElementById('lbImg');
-  const lbTitle  = document.getElementById('lbTitle');
-  const lbDesc   = document.getElementById('lbDesc');
-  const lbClose  = document.getElementById('lbClose');
-  const lbPrev   = document.getElementById('lbPrev');
-  const lbNext   = document.getElementById('lbNext');
-
-  let lbItems   = [];
-  let lbCurrent = 0;
-
-  function openLightbox(items, index) {
-    lbItems   = items;
-    lbCurrent = index;
-    showLbItem(lbCurrent);
-    lightbox?.classList.add('open');
-    document.body.style.overflow = 'hidden';
-  }
-
-  function showLbItem(i) {
-    const item = lbItems[i];
-    if (!item || !lbImg) return;
-    lbImg.style.opacity = '0';
-    setTimeout(() => {
-      lbImg.src = item.img;
-      lbImg.alt = item.title;
-      if (lbTitle) lbTitle.textContent = item.title;
-      if (lbDesc)  lbDesc.textContent  = item.desc;
-      lbImg.style.opacity = '1';
-    }, 150);
-    lbImg.style.transition = 'opacity 0.2s';
-  }
-
-  function closeLightbox() {
-    lightbox?.classList.remove('open');
-    document.body.style.overflow = '';
-  }
-
-  lbClose?.addEventListener('click', closeLightbox);
-  lightbox?.addEventListener('click', e => {
-    if (e.target === lightbox) closeLightbox();
-  });
-
-  lbPrev?.addEventListener('click', () => {
-    lbCurrent = (lbCurrent - 1 + lbItems.length) % lbItems.length;
-    showLbItem(lbCurrent);
-  });
-  lbNext?.addEventListener('click', () => {
-    lbCurrent = (lbCurrent + 1) % lbItems.length;
-    showLbItem(lbCurrent);
-  });
-
-  document.addEventListener('keydown', e => {
-    if (!lightbox?.classList.contains('open')) return;
-    if (e.key === 'Escape') closeLightbox();
-    if (e.key === 'ArrowLeft')  { lbCurrent = (lbCurrent - 1 + lbItems.length) % lbItems.length; showLbItem(lbCurrent); }
-    if (e.key === 'ArrowRight') { lbCurrent = (lbCurrent + 1) % lbItems.length; showLbItem(lbCurrent); }
-  });
-
-  // Botões de zoom em cada card
-  document.querySelectorAll('.pf-zoom-btn').forEach(btn => {
-    btn.addEventListener('click', e => {
-      e.stopPropagation();
-      const card  = btn.closest('.pf-card');
-      if (!card) return;
-
-      // Coleta todos os cards visíveis na ordem atual
-      const visibleCards = pfVisible
-        .map(slide => slide.querySelector('.pf-card'))
-        .filter(Boolean);
-
-      const items = visibleCards.map(c => ({
-        img:   c.dataset.img   || c.querySelector('img')?.src || '',
-        title: c.dataset.title || '',
-        desc:  c.dataset.desc  || '',
-      }));
-
-      const allCards = document.querySelectorAll('.pf-card');
-      let index = 0;
-      allCards.forEach((c, i) => { if (c === card) index = i; });
-
-      // Recalcula index dentro dos visíveis
-      const visibleIdx = visibleCards.indexOf(card);
-      openLightbox(items, Math.max(0, visibleIdx));
-    });
-  });
-
-  // Clique no card também abre lightbox
-  document.querySelectorAll('.pf-card').forEach(card => {
-    card.addEventListener('click', () => {
-      const btn = card.querySelector('.pf-zoom-btn');
-      btn?.click();
-    });
-  });
 
 
   /* ──────────────────────────────────────────
@@ -415,39 +202,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
   /* ──────────────────────────────────────────
-     6. CONTACT FORM
+     6. CONTACT FORM — handled by wizard (section 14)
   ────────────────────────────────────────── */
-  const contactForm = document.getElementById('contactForm');
-  const formToast   = document.getElementById('formToast');
-
-  contactForm?.addEventListener('submit', e => {
-    e.preventDefault();
-
-    const data = new FormData(contactForm);
-    const nome     = contactForm.querySelector('input[type="text"]')?.value || '';
-    const whatsapp = contactForm.querySelector('input[type="tel"]')?.value || '';
-    const servico  = data.get('servicio') || '';
-    const email    = contactForm.querySelector('input[type="email"]')?.value || '';
-    const mensagem = contactForm.querySelector('textarea')?.value || '';
-
-    // Monta mensagem WhatsApp
-    const waMsg = encodeURIComponent(
-      `Hola! 👋 Vengo desde el sitio web.\n\n` +
-      `*Nombre:* ${nome}\n` +
-      `*WhatsApp:* ${whatsapp}\n` +
-      (email    ? `*Email:* ${email}\n` : '') +
-      (servico  ? `*Servicio:* ${servico}\n` : '') +
-      (mensagem ? `*Mensaje:* ${mensagem}\n` : '') +
-      `\nQuiero una consulta gratuita.`
-    );
-
-    window.open(`https://wa.me/595981234567?text=${waMsg}`, '_blank');
-
-    // Toast
-    formToast?.classList.add('show');
-    setTimeout(() => formToast?.classList.remove('show'), 4000);
-    contactForm.reset();
-  });
 
 
   /* ──────────────────────────────────────────
@@ -540,34 +296,263 @@ document.addEventListener('DOMContentLoaded', () => {
   /* ──────────────────────────────────────────
      10. PRICING CARDS — stagger animation
   ────────────────────────────────────────── */
-  const priceCards = document.querySelectorAll('.price-card');
-  const priceObserver = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (!entry.isIntersecting) return;
-      const cards = entry.target.querySelectorAll('.price-card');
-      cards.forEach((card, i) => {
-        setTimeout(() => {
-          card.style.opacity = '1';
-          card.style.transform = card.classList.contains('price-featured')
-            ? 'translateY(-8px) scale(1.02)'
-            : 'translateY(0)';
-        }, i * 100);
-      });
-      priceObserver.unobserve(entry.target);
-    });
-  }, { threshold: 0.1 });
-
   const pricingGrid = document.querySelector('.pricing-grid');
+
   if (pricingGrid) {
-    priceCards.forEach(card => {
-      const base = card.classList.contains('price-featured')
-        ? 'translateY(8px) scale(1.02)'
-        : 'translateY(16px)';
+    const cards = pricingGrid.querySelectorAll('.price-card');
+
+    // Set initial hidden state
+    cards.forEach(card => {
       card.style.opacity = '0';
-      card.style.transform = base;
-      card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+      card.style.transform = card.classList.contains('price-card--popular')
+        ? 'translateY(20px) scale(1.02)'
+        : 'translateY(24px)';
+      card.style.transition = 'opacity 0.65s ease, transform 0.65s ease';
     });
+
+    const priceObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+
+
+        // Stagger cards
+        cards.forEach((card, i) => {
+          setTimeout(() => {
+            card.style.opacity = '1';
+            card.style.transform = card.classList.contains('price-card--popular')
+              ? 'translateY(-8px) scale(1.02)'
+              : 'translateY(0)';
+          }, 120 + i * 110);
+        });
+
+        priceObserver.unobserve(entry.target);
+      });
+    }, { threshold: 0.08 });
+
     priceObserver.observe(pricingGrid);
+  }
+
+  /* ──────────────────────────────────────────
+     11. ACCORDION — touch/click toggle (mobile)
+  ────────────────────────────────────────── */
+  const svcAccordion = document.querySelector('.svc-accordion');
+  if (svcAccordion) {
+    const svcPanels = svcAccordion.querySelectorAll('.svc-panel');
+    const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+
+    if (isTouchDevice) {
+      // Open first panel by default on touch
+      svcPanels[0]?.classList.add('is-active');
+
+      svcPanels.forEach(panel => {
+        panel.addEventListener('click', () => {
+          const wasActive = panel.classList.contains('is-active');
+          svcPanels.forEach(p => p.classList.remove('is-active'));
+          if (!wasActive) panel.classList.add('is-active');
+        });
+      });
+    }
+  }
+
+  /* ──────────────────────────────────────────
+     12. PRICING TOGGLE — removed (no fixed plans)
+  ────────────────────────────────────────── */
+
+  /* ──────────────────────────────────────────
+     13. FOUNDERS CAROUSEL — auto-advance 6s
+  ────────────────────────────────────────── */
+  const aboutCarousel = document.getElementById('aboutCarousel');
+  if (aboutCarousel) {
+    const slides = aboutCarousel.querySelectorAll('.ac-slide');
+    const dots   = aboutCarousel.querySelectorAll('.ac-dot');
+    let current  = 0;
+    let timer    = null;
+
+    const goTo = (idx) => {
+      slides[current].classList.remove('is-active');
+      dots[current].classList.remove('is-active');
+      current = (idx + slides.length) % slides.length;
+      slides[current].classList.add('is-active');
+      dots[current].classList.add('is-active');
+    };
+
+    const startAuto = () => {
+      clearInterval(timer);
+      timer = setInterval(() => goTo(current + 1), 6000);
+    };
+
+    dots.forEach(dot => {
+      dot.addEventListener('click', () => {
+        goTo(parseInt(dot.dataset.index, 10));
+        startAuto();
+      });
+    });
+
+    startAuto();
+  }
+
+
+  /* ──────────────────────────────────────────
+     14. WIZARD — Multi-step contact form
+  ────────────────────────────────────────── */
+  const wizardBox = document.querySelector('.wizard-box');
+  if (wizardBox) {
+    // State
+    const state = { service: '', businessName: '', rubro: '', challenge: '', meetingType: '', name: '', phone: '' };
+    let currentStep = 1;
+    const totalSteps = 4;
+
+    // Elements
+    const progressBar = document.getElementById('wzProgressBar');
+    const stepLabel   = document.getElementById('wzStepLabel');
+    const steps       = document.querySelectorAll('.wz-step');
+    const successEl   = document.getElementById('wzSuccess');
+    const successName = document.getElementById('wzSuccessName');
+    const successWa   = document.getElementById('wzSuccessWa');
+
+    // Update progress bar + step dots
+    function updateProgress(step) {
+      const pct = (step / totalSteps) * 100;
+      progressBar.style.width = pct + '%';
+      stepLabel.textContent = 'Paso ' + step + ' de ' + totalSteps;
+
+      // Dots
+      wizardBox.querySelectorAll('.wz-dot').forEach(dot => {
+        const n = parseInt(dot.dataset.dot, 10);
+        dot.classList.toggle('is-active', n === step);
+        dot.classList.toggle('is-done', n < step);
+      });
+      wizardBox.querySelectorAll('.wz-dot-line').forEach((line, i) => {
+        line.classList.toggle('is-done', i + 1 < step);
+      });
+    }
+
+    // Toggle button enabled state + gold class
+    function setBtnReady(btn, ready) {
+      btn.disabled = !ready;
+      btn.classList.toggle('wz-ready', ready);
+    }
+
+    // Go to step
+    function goToStep(n) {
+      steps.forEach(s => s.classList.remove('is-active'));
+      const target = document.getElementById('wzStep' + n);
+      if (target) {
+        target.classList.add('is-active');
+        currentStep = n;
+        updateProgress(n);
+      }
+    }
+
+    // ── STEP 1: Service selection ──
+    const wzOptions = document.querySelectorAll('.wz-option');
+    const wzNext1   = document.getElementById('wzNext1');
+
+    wzOptions.forEach(btn => {
+      btn.addEventListener('click', () => {
+        wzOptions.forEach(b => b.classList.remove('is-selected'));
+        btn.classList.add('is-selected');
+        state.service = btn.dataset.value;
+        setBtnReady(wzNext1, true);
+      });
+    });
+
+    wzNext1?.addEventListener('click', () => goToStep(2));
+
+    // ── STEP 2: Business info ──
+    const wzBusinessName = document.getElementById('wzBusinessName');
+    const wzRubro        = document.getElementById('wzRubro');
+    const wzChallenge    = document.getElementById('wzChallenge');
+    const wzNext2        = document.getElementById('wzNext2');
+    const wzBack2        = document.getElementById('wzBack2');
+
+    const checkStep2 = () => {
+      setBtnReady(wzNext2, wzBusinessName?.value.trim().length > 0);
+    };
+
+    wzBusinessName?.addEventListener('input', () => {
+      state.businessName = wzBusinessName.value.trim();
+      checkStep2();
+    });
+
+    wzRubro?.addEventListener('input', () => { state.rubro = wzRubro.value.trim(); });
+    wzChallenge?.addEventListener('input', () => { state.challenge = wzChallenge.value.trim(); });
+
+    wzNext2?.addEventListener('click', () => goToStep(3));
+    wzBack2?.addEventListener('click', () => goToStep(1));
+
+    // ── STEP 3: Meeting type ──
+    const wzMeetingCards = document.querySelectorAll('.wz-meeting-card');
+    const wzNext3        = document.getElementById('wzNext3');
+    const wzBack3        = document.getElementById('wzBack3');
+
+    wzMeetingCards.forEach(card => {
+      card.addEventListener('click', () => {
+        wzMeetingCards.forEach(c => c.classList.remove('is-selected'));
+        card.classList.add('is-selected');
+        state.meetingType = card.dataset.value;
+        setBtnReady(wzNext3, true);
+      });
+    });
+
+    wzNext3?.addEventListener('click', () => goToStep(4));
+    wzBack3?.addEventListener('click', () => goToStep(2));
+
+    // ── STEP 4: Contact info ──
+    const wzName   = document.getElementById('wzName');
+    const wzPhone  = document.getElementById('wzPhone');
+    const wzSubmit = document.getElementById('wzSubmit');
+    const wzBack4  = document.getElementById('wzBack4');
+
+    const checkStep4 = () => {
+      setBtnReady(wzSubmit, wzName?.value.trim().length > 0 && wzPhone?.value.trim().length > 0);
+    };
+
+    wzName?.addEventListener('input', () => {
+      state.name = wzName.value.trim();
+      checkStep4();
+    });
+    wzPhone?.addEventListener('input', () => {
+      state.phone = wzPhone.value.trim();
+      checkStep4();
+    });
+
+    wzBack4?.addEventListener('click', () => goToStep(3));
+
+    // Submit
+    wzSubmit?.addEventListener('click', () => {
+      if (!state.name || !state.phone) return;
+
+      // Build WhatsApp message
+      const msg = encodeURIComponent(
+        'Hola! Soy ' + state.name + '\n' +
+        (state.businessName ? 'Tengo ' + state.businessName + (state.rubro ? ' (' + state.rubro + ')' : '') + ' y me interesa ' + state.service + '.\n' : 'Me interesa ' + state.service + '.\n') +
+        'Prefiero reunirnos ' + state.meetingType + '.\n' +
+        (state.challenge ? 'Mi situacion actual: ' + state.challenge + '\n' : '') +
+        'Mi WhatsApp es ' + state.phone + '.'
+      );
+
+      const waUrl = 'https://wa.me/595981234567?text=' + msg;
+
+      // Show success
+      steps.forEach(s => s.classList.remove('is-active'));
+      progressBar.style.width = '100%';
+      stepLabel.textContent = '¡Todo listo!';
+      wizardBox.querySelectorAll('.wz-dot').forEach(dot => {
+        dot.classList.remove('is-active');
+        dot.classList.add('is-done');
+      });
+      wizardBox.querySelectorAll('.wz-dot-line').forEach(line => line.classList.add('is-done'));
+      successName.textContent = state.name.split(' ')[0];
+      successWa.href = waUrl;
+      successEl.classList.add('is-active');
+
+      // Open WhatsApp after brief delay
+      setTimeout(() => window.open(waUrl, '_blank'), 600);
+    });
+
+    // Initialize
+    updateProgress(1);
   }
 
   console.log('🌿 The Fresh Cycle — v3 loaded');
